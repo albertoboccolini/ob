@@ -6,13 +6,22 @@ import "os"
 import "os/exec"
 import "flag"
 import "strconv"
-import "syscall"
 import "log"
 import "path/filepath"
 import "ob/services"
 
+func getConfigDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	configDir := filepath.Join(home, ".config", "ob")
+	return configDir
+}
+
 var (
-	configDir  = filepath.Join(os.Getenv("HOME"), ".config", "ob")
+	configDir  = getConfigDir()
 	pidFile    = filepath.Join(configDir, "ob.pid")
 	logFile    = filepath.Join(configDir, "ob.log")
 	configFile = filepath.Join(configDir, "vault.path")
@@ -161,7 +170,7 @@ func stopSync() {
 		fmt.Println("Process not found")
 	}
 
-	err = process.Signal(syscall.SIGTERM)
+	err = process.Kill()
 	if err != nil {
 		fmt.Println("Warning:", err)
 	}
