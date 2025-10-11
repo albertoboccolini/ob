@@ -1,9 +1,5 @@
 # ob
 
-A tool that automatically syncs your Obsidian vault with a GitHub repository.
-
-## Project Overview
-
 This project is not necessarily the best way to synchronize Obsidian vaults with GitHub, but it is the method that works best for me.
 While there are many Obsidian plugins designed for this purpose, I wanted a simple command-line tool that I could configure once and then forget about.
 

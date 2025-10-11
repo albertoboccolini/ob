@@ -77,8 +77,8 @@ func runDaemon() {
 	}
 	defer os.Remove(pidFile)
 
-	syncToRemoteTicker := time.NewTicker(1 * time.Hour)
-	syncVaultTicker := time.NewTicker(30 * time.Second)
+	syncToRemoteTicker := time.NewTicker(12 * time.Hour)
+	syncVaultTicker := time.NewTicker(1 * time.Minute)
 	defer syncToRemoteTicker.Stop()
 	defer syncVaultTicker.Stop()
 
@@ -101,7 +101,6 @@ func runDaemon() {
 	for {
 		select {
 		case <-syncToRemoteTicker.C:
-			log.Println("Executing SyncToRemote...")
 			go func() {
 				err := SyncToRemote(vaultPath)
 				if err != nil {
@@ -109,7 +108,6 @@ func runDaemon() {
 				}
 			}()
 		case <-syncVaultTicker.C:
-			log.Println("Executing SyncVault...")
 			go func() {
 				err := SyncVault(vaultPath)
 				if err != nil {
@@ -151,6 +149,7 @@ func stopSync() {
 		os.Exit(1)
 	}
 
+	os.Remove(pidFile) // Remove potentially stale PID file
 	pid, err := strconv.Atoi(string(data))
 	if err != nil {
 		fmt.Println("Invalid PID file")
@@ -160,16 +159,13 @@ func stopSync() {
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		fmt.Println("Process not found")
-		os.Exit(1)
 	}
 
 	err = process.Signal(syscall.SIGTERM)
 	if err != nil {
-		fmt.Println("Error stopping process:", err)
-		os.Exit(1)
+		fmt.Println("Warning:", err)
 	}
 
-	os.Remove(pidFile)
 	fmt.Println("Sync stopped")
 }
 
