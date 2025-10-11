@@ -3,7 +3,7 @@
 ### Install
 
 ```bash
-go install ./
+go install
 ```
 
 ### Uninstall
@@ -17,7 +17,7 @@ rm -rf ~/go/bin/ob
 ### Compile
 
 ```bash
-go build -o ob ./
+go build
 ```
 
 ### Format

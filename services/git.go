@@ -20,8 +20,8 @@ func IssueCommand(command string, args []string) ([]string, error) {
 	return lines, nil
 }
 
-func HasUncommittedChanges() (bool, error) {
-	lines, err := IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "status", "--porcelain"})
+func HasUncommittedChanges(vaultPath string) (bool, error) {
+	lines, err := IssueCommand("git", []string{"-C", vaultPath, "status", "--porcelain"})
 	if err != nil {
 		return false, err
 	}
@@ -37,22 +37,13 @@ func HasUncommittedChanges() (bool, error) {
 	return hasChanges, nil
 }
 
-func CommitChanges() error {
-	_, err := IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "add", "."})
+func CommitChanges(vaultPath string) error {
+	_, err := IssueCommand("git", []string{"-C", vaultPath, "add", "."})
 	if err != nil {
 		return err
 	}
 
-	_, err = IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "commit", "-m", "Auto commit by ob"})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func PushChanges() error {
-	_, err := IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "push", "origin", "main"})
+	_, err = IssueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Auto commit by ob"})
 	if err != nil {
 		return err
 	}
@@ -60,19 +51,28 @@ func PushChanges() error {
 	return nil
 }
 
-func PullIfNeeded() error {
-	_, err := IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "fetch", "origin", "main"})
+func PushChanges(vaultPath string) error {
+	_, err := IssueCommand("git", []string{"-C", vaultPath, "push", "origin", "main"})
 	if err != nil {
 		return err
 	}
 
-	lines, err := IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "rev-list", "--count", "HEAD..origin/main"})
+	return nil
+}
+
+func PullIfNeeded(vaultPath string) error {
+	_, err := IssueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
+	if err != nil {
+		return err
+	}
+
+	lines, err := IssueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "HEAD..origin/main"})
 	if err != nil {
 		return err
 	}
 
 	if len(lines) > 0 && lines[0] != "0" {
-		_, err = IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "pull", "-X", "theirs", "origin", "main"})
+		_, err = IssueCommand("git", []string{"-C", vaultPath, "pull", "-X", "theirs", "origin", "main"})
 		if err != nil {
 			return err
 		}
@@ -80,24 +80,24 @@ func PullIfNeeded() error {
 	}
 
 	// Check if local is ahead and push if needed
-	lines, err = IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "rev-list", "--count", "origin/main..HEAD"})
+	lines, err = IssueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "origin/main..HEAD"})
 	if err != nil {
 		return err
 	}
 
 	if len(lines) > 0 && lines[0] != "0" {
 		// Squash commits and push
-		_, err = IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "reset", "--soft", "origin/main"})
+		_, err = IssueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "origin/main"})
 		if err != nil {
 			return err
 		}
 
-		_, err = IssueCommand("git", []string{"-C", "/home/albertoboccolini/Documenti/Obsidian/debian", "commit", "-m", "Squashed commits by ob"})
+		_, err = IssueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed commits by ob"})
 		if err != nil {
 			return err
 		}
 
-		err = PushChanges()
+		err = PushChanges(vaultPath)
 		if err != nil {
 			return err
 		}

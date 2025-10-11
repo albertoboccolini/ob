@@ -12,13 +12,21 @@ import "path/filepath"
 import "ob/services"
 
 var (
-	configDir = filepath.Join(os.Getenv("HOME"), ".config", "ob")
-	pidFile   = filepath.Join(configDir, "ob.pid")
-	logFile   = filepath.Join(configDir, "ob.log")
+	configDir  = filepath.Join(os.Getenv("HOME"), ".config", "ob")
+	pidFile    = filepath.Join(configDir, "ob.pid")
+	logFile    = filepath.Join(configDir, "ob.log")
+	configFile = filepath.Join(configDir, "vault.path")
 )
 
-func SyncToRemote() error {
-	err := git.PullIfNeeded()
+func CreateConfigDir() {
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		log.Fatal("Error creating config directory:", err)
+		os.Exit(1)
+	}
+}
+
+func SyncToRemote(vaultPath string) error {
+	err := git.PullIfNeeded(vaultPath)
 	if err != nil {
 		return err
 	}
@@ -27,15 +35,15 @@ func SyncToRemote() error {
 	return nil
 }
 
-func SyncVault() error {
-	hasChanges, err := git.HasUncommittedChanges()
+func SyncVault(vaultPath string) error {
+	hasChanges, err := git.HasUncommittedChanges(vaultPath)
 	if err != nil {
 		log.Println("Error:", err)
 		return err
 	}
 
 	if hasChanges {
-		err = git.CommitChanges()
+		err = git.CommitChanges(vaultPath)
 		if err != nil {
 			return err
 		}
@@ -47,12 +55,14 @@ func SyncVault() error {
 }
 
 func runDaemon() {
-	// Create config directory if it doesn't exist
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		log.Fatal("Error creating config directory:", err)
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		log.Fatal("Error reading vault path from config:", err)
 	}
+	vaultPath := string(data)
 
-	// Setup logging to file
+	CreateConfigDir()
+
 	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal("Error opening log file:", err)
@@ -60,7 +70,6 @@ func runDaemon() {
 	defer f.Close()
 	log.SetOutput(f)
 
-	// Save PID
 	pid := os.Getpid()
 	err = os.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0644)
 	if err != nil {
@@ -76,14 +85,14 @@ func runDaemon() {
 	log.Println("Starting sync operations...")
 
 	go func() {
-		err := SyncToRemote()
+		err := SyncToRemote(vaultPath)
 		if err != nil {
 			log.Println("Error syncing to remote:", err)
 		}
 	}()
 
 	go func() {
-		err := SyncVault()
+		err := SyncVault(vaultPath)
 		if err != nil {
 			log.Println("Error syncing vault:", err)
 		}
@@ -94,7 +103,7 @@ func runDaemon() {
 		case <-syncToRemoteTicker.C:
 			log.Println("Executing SyncToRemote...")
 			go func() {
-				err := SyncToRemote()
+				err := SyncToRemote(vaultPath)
 				if err != nil {
 					log.Println("Error syncing to remote:", err)
 				}
@@ -102,7 +111,7 @@ func runDaemon() {
 		case <-syncVaultTicker.C:
 			log.Println("Executing SyncVault...")
 			go func() {
-				err := SyncVault()
+				err := SyncVault(vaultPath)
 				if err != nil {
 					log.Println("Error syncing vault:", err)
 				}
@@ -111,10 +120,17 @@ func runDaemon() {
 	}
 }
 
-func startSync() {
-	// Check if already running
+func startSync(vaultPath string) {
 	if _, err := os.Stat(pidFile); err == nil {
 		fmt.Println("Sync is already running")
+		os.Exit(1)
+	}
+
+	CreateConfigDir()
+
+	err := os.WriteFile(configFile, []byte(vaultPath), 0644)
+	if err != nil {
+		fmt.Println("Error saving vault path:", err)
 		os.Exit(1)
 	}
 
@@ -124,6 +140,7 @@ func startSync() {
 
 	fmt.Println("Sync started successfully")
 	fmt.Printf("PID: %d\n", cmd.Process.Pid)
+	fmt.Printf("Vault: %s\n", vaultPath)
 	fmt.Printf("Logs: %s\n", logFile)
 }
 
@@ -168,8 +185,8 @@ func main() {
 	if flag.NArg() < 1 {
 		fmt.Println("Usage: ob <command>")
 		fmt.Println("Commands:")
-		fmt.Println("  start    Start the sync operations")
-		fmt.Println("  stop     Stop the sync operations")
+		fmt.Println("  start <vault-path>    Start the sync operations")
+		fmt.Println("  stop                  Stop the sync operations")
 		os.Exit(1)
 	}
 
@@ -177,7 +194,13 @@ func main() {
 
 	switch command {
 	case "start":
-		startSync()
+		if flag.NArg() < 2 {
+			fmt.Println("Error: vault path is required")
+			fmt.Println("Usage: ob start <vault-path>")
+			os.Exit(1)
+		}
+		vaultPath := flag.Arg(1)
+		startSync(vaultPath)
 	case "stop":
 		stopSync()
 	default:
