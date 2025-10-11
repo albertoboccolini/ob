@@ -149,6 +149,7 @@ func stopSync() {
 		os.Exit(1)
 	}
 
+	os.Remove(pidFile) // Remove potentially stale PID file
 	pid, err := strconv.Atoi(string(data))
 	if err != nil {
 		fmt.Println("Invalid PID file")
@@ -158,16 +159,13 @@ func stopSync() {
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		fmt.Println("Process not found")
-		os.Exit(1)
 	}
 
 	err = process.Signal(syscall.SIGTERM)
 	if err != nil {
-		fmt.Println("Error stopping process:", err)
-		os.Exit(1)
+		fmt.Println("Warning:", err)
 	}
 
-	os.Remove(pidFile)
 	fmt.Println("Sync stopped")
 }
 
