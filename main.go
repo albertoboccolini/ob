@@ -14,7 +14,6 @@ func getConfigDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 	configDir := filepath.Join(home, ".config", "ob")
 	return configDir
