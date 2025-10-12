@@ -3,12 +3,23 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"ob/services/config"
 	"ob/services/sync"
 	"os"
 	"os/exec"
 	"strconv"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
+
+var Log = &lumberjack.Logger{
+	Filename:   config.LogFile,
+	MaxSize:    10,
+	MaxBackups: 5,
+	MaxAge:     30,
+	Compress:   true,
+}
 
 func startSync(vaultPath string) {
 	if _, err := os.Stat(config.PidFile); err == nil {
@@ -61,6 +72,9 @@ func stopSync() {
 }
 
 func main() {
+	log.SetOutput(Log)
+	defer Log.Close()
+
 	daemon := flag.Bool("daemon", false, "Run as daemon")
 	flag.Parse()
 

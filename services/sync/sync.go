@@ -2,11 +2,12 @@ package sync
 
 import (
 	"log"
-	"ob/services/config"
-	"ob/services/git"
 	"os"
 	"strconv"
 	"time"
+
+	"ob/services/config"
+	"ob/services/git"
 )
 
 func syncToRemote(vaultPath string) error {
