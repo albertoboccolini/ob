@@ -21,8 +21,19 @@ builds:
     binary: ob
 
 archives:
-  - format: binary
+  - id: windows-binary
+    format: binary
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    builds:
+      - windows
+  - id: unix-archives
+    format: tar.gz
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    builds:
+      - unix
+    files:
+      - none*
+    wrap_in_directory: false
 
 changelog:
   sort: asc
