@@ -21,16 +21,15 @@ builds:
     binary: ob
 
 archives:
-  - id: windows-binary
-    meta: true
+  - id: default
+    format_overrides:
+      - goos: windows
+        format: binary
+      - goos: linux
+        format: tar.gz
+      - goos: darwin
+        format: tar.gz
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    builds:
-      - windows
-  - id: unix-archives
-    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format: tar.gz
-    builds:
-      - unix
     files:
       - none*
 
