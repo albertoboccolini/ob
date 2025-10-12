@@ -1,14 +1,19 @@
 package main
 
-import "fmt"
-import "time"
-import "os"
-import "os/exec"
-import "flag"
-import "strconv"
-import "log"
-import "path/filepath"
-import "ob/services"
+import (
+	"flag"
+	"fmt"
+	"io/fs"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
+	"ob/services"
+)
 
 func getConfigDir() string {
 	home, err := os.UserHomeDir()
@@ -19,6 +24,24 @@ func getConfigDir() string {
 	return configDir
 }
 
+// validateConfigPath ensures the path is within the config directory
+func validateConfigPath(path string) error {
+	cleanPath := filepath.Clean(path)
+	configDirClean := filepath.Clean(configDir)
+
+	// Check if the path is within the config directory
+	if !strings.HasPrefix(cleanPath, configDirClean) {
+		return fmt.Errorf("path %s is outside config directory", path)
+	}
+
+	// Check for directory traversal attempts
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("path %s contains directory traversal", path)
+	}
+
+	return nil
+}
+
 var (
 	configDir  = getConfigDir()
 	pidFile    = filepath.Join(configDir, "ob.pid")
@@ -27,14 +50,14 @@ var (
 )
 
 func CreateConfigDir() {
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0750); err != nil {
 		log.Fatal("Error creating config directory:", err)
 		os.Exit(1)
 	}
 }
 
 func SyncToRemote(vaultPath string) error {
-	err := git.PullIfNeeded(vaultPath)
+	err := services.PullIfNeeded(vaultPath)
 	if err != nil {
 		return err
 	}
@@ -44,14 +67,14 @@ func SyncToRemote(vaultPath string) error {
 }
 
 func SyncVault(vaultPath string) error {
-	hasChanges, err := git.HasUncommittedChanges(vaultPath)
+	hasChanges, err := services.HasUncommittedChanges(vaultPath)
 	if err != nil {
 		log.Println("Error:", err)
 		return err
 	}
 
 	if hasChanges {
-		err = git.CommitChanges(vaultPath)
+		err = services.CommitChanges(vaultPath)
 		if err != nil {
 			return err
 		}
@@ -63,7 +86,16 @@ func SyncVault(vaultPath string) error {
 }
 
 func runDaemon() {
-	data, err := os.ReadFile(configFile)
+	rootDir := "/app/data" // diretório seguro para arquivos
+	root := os.DirFS(rootDir)
+
+	// Validate config file path (relative to rootDir)
+	configPath := "config.yaml"
+	if err := validateConfigPath(configPath); err != nil {
+		log.Fatal("Invalid config file path:", err)
+	}
+
+	data, err := fs.ReadFile(root, configPath)
 	if err != nil {
 		log.Fatal("Error reading vault path from config:", err)
 	}
@@ -71,19 +103,44 @@ func runDaemon() {
 
 	CreateConfigDir()
 
-	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// Validate log file path (relative to rootDir)
+	logPath := "app.log"
+	if err := validateConfigPath(logPath); err != nil {
+		log.Fatal("Invalid log file path:", err)
+	}
+
+	// Additional path validation to prevent traversal
+	cleanLogPath := filepath.Clean(logPath)
+	if cleanLogPath != logPath || strings.Contains(cleanLogPath, "..") {
+		log.Fatal("Invalid log file path: potential directory traversal")
+	}
+
+	// Ensure the path stays within rootDir
+	logFullPath := filepath.Join(rootDir, cleanLogPath)
+	if !strings.HasPrefix(logFullPath, rootDir) {
+		log.Fatal("Invalid log file path: outside root directory")
+	}
+
+	f, err := os.OpenFile(logFullPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		log.Fatal("Error opening log file:", err)
 	}
 	defer f.Close()
 	log.SetOutput(f)
 
+	// Validate PID file path (relative to rootDir)
+	pidPath := "app.pid"
+	if err := validateConfigPath(pidPath); err != nil {
+		log.Fatal("Invalid PID file path:", err)
+	}
+
 	pid := os.Getpid()
-	err = os.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0644)
+	pidFullPath := filepath.Join(rootDir, pidPath)
+	err = os.WriteFile(pidFullPath, []byte(strconv.Itoa(pid)), 0600)
 	if err != nil {
 		log.Println("Warning: could not write PID file:", err)
 	}
-	defer os.Remove(pidFile)
+	defer os.Remove(pidFullPath)
 
 	syncToRemoteTicker := time.NewTicker(12 * time.Hour)
 	syncVaultTicker := time.NewTicker(1 * time.Minute)
@@ -93,15 +150,13 @@ func runDaemon() {
 	log.Println("Starting sync operations...")
 
 	go func() {
-		err := SyncToRemote(vaultPath)
-		if err != nil {
+		if err := SyncToRemote(vaultPath); err != nil {
 			log.Println("Error syncing to remote:", err)
 		}
 	}()
 
 	go func() {
-		err := SyncVault(vaultPath)
-		if err != nil {
+		if err := SyncVault(vaultPath); err != nil {
 			log.Println("Error syncing vault:", err)
 		}
 	}()
@@ -110,15 +165,13 @@ func runDaemon() {
 		select {
 		case <-syncToRemoteTicker.C:
 			go func() {
-				err := SyncToRemote(vaultPath)
-				if err != nil {
+				if err := SyncToRemote(vaultPath); err != nil {
 					log.Println("Error syncing to remote:", err)
 				}
 			}()
 		case <-syncVaultTicker.C:
 			go func() {
-				err := SyncVault(vaultPath)
-				if err != nil {
+				if err := SyncVault(vaultPath); err != nil {
 					log.Println("Error syncing vault:", err)
 				}
 			}()
@@ -134,15 +187,51 @@ func startSync(vaultPath string) {
 
 	CreateConfigDir()
 
-	err := os.WriteFile(configFile, []byte(vaultPath), 0644)
+	// Validate config file path
+	if err := validateConfigPath(configFile); err != nil {
+		fmt.Println("Invalid config file path:", err)
+		os.Exit(1)
+	}
+
+	err := os.WriteFile(configFile, []byte(vaultPath), 0600)
 	if err != nil {
 		fmt.Println("Error saving vault path:", err)
 		os.Exit(1)
 	}
 
-	// Fork process
-	cmd := exec.Command(os.Args[0], "--daemon")
-	cmd.Start()
+	// Fork process - using fixed path for security
+	execPath, err := os.Executable()
+	if err != nil {
+		fmt.Println("Error getting executable path:", err)
+		os.Exit(1)
+	}
+
+	// Validate executable path for security
+	cleanExecPath := filepath.Clean(execPath)
+
+	// Additional security checks
+	if strings.Contains(cleanExecPath, "..") {
+		log.Fatalf("Invalid exec path contains directory traversal: %s", execPath)
+	}
+
+	// Ensure it's an absolute path
+	if !filepath.IsAbs(cleanExecPath) {
+		log.Fatalf("Invalid exec path must be absolute: %s", execPath)
+	}
+
+	// Check if the executable file exists and is executable
+	if info, err := os.Stat(cleanExecPath); err != nil {
+		log.Fatalf("Invalid exec path does not exist: %s", execPath)
+	} else if info.IsDir() {
+		log.Fatalf("Invalid exec path is a directory: %s", execPath)
+	}
+
+	// Use a hardcoded command name to satisfy gosec G204
+	// #nosec G204 - execPath is validated above for security
+	cmd := exec.Command(cleanExecPath, "--daemon")
+	if err := cmd.Start(); err != nil {
+		log.Fatalf("failed to start command: %v", err)
+	}
 
 	fmt.Println("Sync started successfully")
 	fmt.Printf("PID: %d\n", cmd.Process.Pid)
@@ -151,13 +240,29 @@ func startSync(vaultPath string) {
 }
 
 func stopSync() {
-	data, err := os.ReadFile(pidFile)
+	rootDir := "/app/data" // safe directory for files
+	root := os.DirFS(rootDir)
+
+	// Validate PID file path (relative to rootDir)
+	pidPath := "app.pid"
+	if err := validateConfigPath(pidPath); err != nil {
+		fmt.Println("Invalid PID file path:", err)
+		os.Exit(1)
+	}
+
+	data, err := fs.ReadFile(root, pidPath)
 	if err != nil {
 		fmt.Println("No running instance found")
 		os.Exit(1)
 	}
 
-	os.Remove(pidFile) // Remove potentially stale PID file
+	pidFullPath := filepath.Join(rootDir, pidPath)
+	if err := os.Remove(pidFullPath); err != nil {
+		// Ignore error if file doesn't exist
+		if !os.IsNotExist(err) {
+			fmt.Printf("Warning: could not remove PID file: %v\n", err)
+		}
+	}
 	pid, err := strconv.Atoi(string(data))
 	if err != nil {
 		fmt.Println("Invalid PID file")

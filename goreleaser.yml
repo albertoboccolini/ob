@@ -1,0 +1,40 @@
+version: 2
+project_name: ob
+
+builds:
+  - id: windows
+    main: ./main.go
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    binary: ob
+  - id: unix
+    main: ./main.go
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    binary: ob
+
+archives:
+  - id: zip
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format: zip
+    builds:
+      - windows
+  - id: targz
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+    builds:
+      - unix
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
