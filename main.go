@@ -3,21 +3,24 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"ob/services/config"
 	"ob/services/sync"
 	"os"
 	"os/exec"
 	"strconv"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func startSync(vaultPath string) {
-	if _, err := os.Stat(config.PidFile); err == nil {
+	if _, err := os.Stat(config.GetPidFile()); err == nil {
 		fmt.Println("Sync is already running")
 		os.Exit(1)
 	}
 
 	config.CreateConfigDir()
-	err := os.WriteFile(config.ConfigFile, []byte(vaultPath), 0644)
+	err := os.WriteFile(config.GetConfigFile(), []byte(vaultPath), 0644)
 	if err != nil {
 		fmt.Println("Error saving vault path:", err)
 		os.Exit(1)
@@ -30,17 +33,18 @@ func startSync(vaultPath string) {
 	fmt.Println("Sync started successfully")
 	fmt.Printf("PID: %d\n", cmd.Process.Pid)
 	fmt.Printf("Vault: %s\n", vaultPath)
-	fmt.Printf("Logs: %s\n", config.LogFile)
+	fmt.Printf("Logs: %s\n", config.GetLogFile())
 }
 
 func stopSync() {
-	data, err := os.ReadFile(config.PidFile)
+	pidFile := config.GetPidFile()
+	data, err := os.ReadFile(pidFile)
 	if err != nil {
 		fmt.Println("No running instance found")
 		os.Exit(1)
 	}
 
-	os.Remove(config.PidFile) // Remove potentially stale PID file
+	os.Remove(pidFile) // Remove potentially stale PID file
 	pid, err := strconv.Atoi(string(data))
 	if err != nil {
 		fmt.Println("Invalid PID file")
@@ -61,6 +65,17 @@ func stopSync() {
 }
 
 func main() {
+	config.InitConfig()
+	logger := &lumberjack.Logger{
+		Filename:   config.GetLogFile(),
+		MaxSize:    10,
+		MaxBackups: 5,
+		MaxAge:     30,
+		Compress:   true,
+	}
+	log.SetOutput(logger)
+	defer logger.Close()
+
 	daemon := flag.Bool("daemon", false, "Run as daemon")
 	flag.Parse()
 

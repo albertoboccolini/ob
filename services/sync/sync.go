@@ -2,11 +2,12 @@ package sync
 
 import (
 	"log"
-	"ob/services/config"
-	"ob/services/git"
 	"os"
 	"strconv"
 	"time"
+
+	"ob/services/config"
+	"ob/services/git"
 )
 
 func syncToRemote(vaultPath string) error {
@@ -39,7 +40,7 @@ func syncVault(vaultPath string) error {
 }
 
 func RunDaemon() {
-	data, err := os.ReadFile(config.ConfigFile)
+	data, err := os.ReadFile(config.GetConfigFile())
 	if err != nil {
 		log.Fatal("Error reading vault path from config:", err)
 	}
@@ -47,7 +48,7 @@ func RunDaemon() {
 	vaultPath := string(data)
 	config.CreateConfigDir()
 
-	f, err := os.OpenFile(config.LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(config.GetLogFile(), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal("Error opening log file:", err)
 	}
@@ -55,13 +56,15 @@ func RunDaemon() {
 	defer f.Close()
 	log.SetOutput(f)
 
+	pidFile := config.GetPidFile()
 	pid := os.Getpid()
-	err = os.WriteFile(config.PidFile, []byte(strconv.Itoa(pid)), 0644)
+
+	err = os.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0644)
 	if err != nil {
 		log.Println("Warning: could not write PID file:", err)
 	}
 
-	defer os.Remove(config.PidFile)
+	defer os.Remove(pidFile)
 
 	syncToRemoteTicker := time.NewTicker(12 * time.Hour)
 	syncVaultTicker := time.NewTicker(1 * time.Minute)

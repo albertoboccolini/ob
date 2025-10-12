@@ -6,25 +6,39 @@ import (
 	"path/filepath"
 )
 
-func GetConfigDir() string {
+var (
+	configDir  string
+	pidFile    string
+	logFile    string
+	configFile string
+)
+
+func InitConfig() {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	configDir := filepath.Join(home, ".config", "ob")
-	return configDir
+	configDir = filepath.Join(home, ".config", "ob")
+	pidFile = filepath.Join(configDir, "ob.pid")
+	logFile = filepath.Join(configDir, "ob.log")
+	configFile = filepath.Join(configDir, "vault.path")
 }
 
 func CreateConfigDir() {
-	if err := os.MkdirAll(GetConfigDir(), 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0755); err != nil {
 		log.Fatal("Error creating config directory:", err)
 	}
 }
 
-var (
-	configDir  = GetConfigDir()
-	PidFile    = filepath.Join(configDir, "ob.pid")
-	LogFile    = filepath.Join(configDir, "ob.log")
-	ConfigFile = filepath.Join(configDir, "vault.path")
-)
+func GetPidFile() string {
+	return pidFile
+}
+
+func GetLogFile() string {
+	return logFile
+}
+
+func GetConfigFile() string {
+	return configFile
+}
