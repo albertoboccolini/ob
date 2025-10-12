@@ -19,7 +19,6 @@ func GetConfigDir() string {
 func CreateConfigDir() {
 	if err := os.MkdirAll(GetConfigDir(), 0755); err != nil {
 		log.Fatal("Error creating config directory:", err)
-		os.Exit(1)
 	}
 }
 
