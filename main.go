@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"ob/services/config"
 	"ob/services/sync"
 	"os"
@@ -25,7 +26,9 @@ func startSync(vaultPath string) {
 
 	// Fork process
 	cmd := exec.Command(os.Args[0], "--daemon")
-	cmd.Start()
+	if err := cmd.Start(); err != nil {
+		log.Fatal("Failed to start command: %v", err)
+	}
 
 	fmt.Println("Sync started successfully")
 	fmt.Printf("PID: %d\n", cmd.Process.Pid)
