@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
+	"syscall"
 
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -18,19 +20,23 @@ func isProcessRunning(pid int) bool {
 	if err != nil {
 		return false
 	}
-	err = process.Signal(os.Signal(nil))
+	err = process.Signal(syscall.Signal(0))
 	return err == nil
 }
 
 func startSync(vaultPath string) {
 	pidFile := config.GetPidFile()
 	if data, err := os.ReadFile(pidFile); err == nil {
-		pid, err := strconv.Atoi(string(data))
+		pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 		if err == nil && isProcessRunning(pid) {
 			fmt.Println("Sync is already running")
 			os.Exit(1)
 		}
-		os.Remove(pidFile) // Remove stale PID file
+		// Remove stale PID file
+		if err := os.Remove(pidFile); err != nil {
+			fmt.Printf("Failed to remove stale PID file %s: %v", pidFile, err)
+			os.Exit(1)
+		}
 	}
 
 	// Fork process
@@ -51,7 +57,7 @@ func stopSync() {
 		os.Exit(1)
 	}
 
-	pid, err := strconv.Atoi(string(data))
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil {
 		fmt.Println("Invalid PID file")
 		os.Exit(1)
