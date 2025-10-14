@@ -9,21 +9,34 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
+	"syscall"
 
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func startSync(vaultPath string) {
-	if _, err := os.Stat(config.GetPidFile()); err == nil {
-		fmt.Println("Sync is already running")
-		os.Exit(1)
-	}
-
-	config.CreateConfigDir()
-	err := os.WriteFile(config.GetConfigFile(), []byte(vaultPath), 0644)
+func isProcessRunning(pid int) bool {
+	process, err := os.FindProcess(pid)
 	if err != nil {
-		fmt.Println("Error saving vault path:", err)
-		os.Exit(1)
+		return false
+	}
+	err = process.Signal(syscall.Signal(0))
+	return err == nil
+}
+
+func startSync(vaultPath string) {
+	pidFile := config.GetPidFile()
+	if data, err := os.ReadFile(pidFile); err == nil {
+		pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+		if err == nil && isProcessRunning(pid) {
+			fmt.Println("Sync is already running")
+			os.Exit(1)
+		}
+		// Remove stale PID file
+		if err := os.Remove(pidFile); err != nil {
+			fmt.Printf("Failed to remove stale PID file %s: %v", pidFile, err)
+			os.Exit(1)
+		}
 	}
 
 	// Fork process
@@ -44,8 +57,7 @@ func stopSync() {
 		os.Exit(1)
 	}
 
-	os.Remove(pidFile) // Remove potentially stale PID file
-	pid, err := strconv.Atoi(string(data))
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
 	if err != nil {
 		fmt.Println("Invalid PID file")
 		os.Exit(1)
@@ -54,11 +66,13 @@ func stopSync() {
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		fmt.Println("Process not found")
+		os.Exit(1)
 	}
 
 	err = process.Kill()
 	if err != nil {
-		fmt.Println("Warning:", err)
+		fmt.Println("Error stopping process:", err)
+		os.Exit(1)
 	}
 
 	fmt.Println("Sync stopped")
