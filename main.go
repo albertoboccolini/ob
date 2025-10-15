@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"ob/services/boot"
 	"ob/services/config"
 	"ob/services/sync"
 	"os"
@@ -103,6 +104,7 @@ func main() {
 		fmt.Println("Commands:")
 		fmt.Println("  start <vault-path>    Start the sync operations")
 		fmt.Println("  stop                  Stop the sync operations")
+		fmt.Println("  boot <enable|disable> Enable or disable ob to start on boot")
 		os.Exit(1)
 	}
 
@@ -119,6 +121,8 @@ func main() {
 		startSync(vaultPath)
 	case "stop":
 		stopSync()
+	case "boot":
+		boot.HandleBootCommand()
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		os.Exit(1)
