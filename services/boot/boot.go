@@ -2,6 +2,7 @@ package boot
 
 import (
 	"fmt"
+	"log"
 	"ob/services/config"
 	"os"
 	"os/exec"
@@ -30,7 +31,11 @@ WantedBy=default.target
 `
 
 func getServicePath() string {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalf("failed to get home directory: %v", err)
+		os.Exit(1)
+	}
 	return filepath.Join(home, ".config", "systemd", "user", "ob.service")
 }
 
@@ -107,7 +112,7 @@ func disableBootService() error {
 		return fmt.Errorf("boot is not configured")
 	}
 
-	// We directly disable to leave ob active
+	// We disable directly to leave ob active
 	if err := runSystemctl("disable", "ob.service"); err != nil {
 		return fmt.Errorf("failed to disable service: %w", err)
 	}
