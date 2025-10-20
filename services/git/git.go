@@ -1,7 +1,9 @@
 package git
 
-import "os/exec"
-import "strings"
+import (
+	"os/exec"
+	"strings"
+)
 
 func IssueCommand(command string, args []string) ([]string, error) {
 	cmd := exec.Command(command, args...)
