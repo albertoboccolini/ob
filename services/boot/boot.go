@@ -24,10 +24,10 @@ Environment="PATH=%s"
 Environment="HOME=%s"
 Environment="VAULT_PATH=%s"
 Environment="SSH_AUTH_SOCK=%s"
-Environment="GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new"
+Environment="GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=yes"
 StandardOutput=journal
 StandardError=journal
-ExecStartPre=/bin/sh -c 'until ping -c1 -W1 8.8.8.8; do sleep 1; done'
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do ping -c1 -W1 8.8.8.8 && exit 0; sleep 1; done; exit 1'
 
 [Install]
 WantedBy=default.target
