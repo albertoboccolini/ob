@@ -12,8 +12,8 @@ import (
 
 const serviceTemplate = `[Unit]
 Description=ob Service
-After=network.target ssh-agent.service
-Wants=ssh-agent.service
+After=network-online.target ssh-agent.service
+Wants=network-online.target ssh-agent.service
 
 [Service]
 Type=simple
@@ -23,8 +23,11 @@ RestartSec=10
 Environment="PATH=%s"
 Environment="HOME=%s"
 Environment="VAULT_PATH=%s"
+Environment="SSH_AUTH_SOCK=%s"
+Environment="GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=accept-new"
 StandardOutput=journal
 StandardError=journal
+ExecStartPre=/bin/sh -c 'until ping -c1 -W1 8.8.8.8; do sleep 1; done'
 
 [Install]
 WantedBy=default.target
@@ -73,11 +76,17 @@ func enableBootService(vaultPath string) error {
 		pathEnv = "/usr/local/bin:/usr/bin:/bin"
 	}
 
+	sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
+	if sshAuthSock == "" {
+		sshAuthSock = filepath.Join(home, ".ssh", "agent.sock")
+	}
+
 	serviceContent := fmt.Sprintf(serviceTemplate,
 		execPath,
 		pathEnv,
 		home,
 		vaultPath,
+		sshAuthSock,
 	)
 
 	serviceDir := filepath.Dir(getServicePath())
