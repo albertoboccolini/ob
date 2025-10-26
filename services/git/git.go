@@ -1,7 +1,10 @@
 package git
 
-import "os/exec"
-import "strings"
+import (
+	"log"
+	"os/exec"
+	"strings"
+)
 
 func IssueCommand(command string, args []string) ([]string, error) {
 	cmd := exec.Command(command, args...)
@@ -92,7 +95,8 @@ func PullIfNeeded(vaultPath string) error {
 			return err
 		}
 
-		_, err = IssueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed commits by ob"})
+		numCommits := lines[0]
+		_, err = IssueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + numCommits + " commits by ob"})
 		if err != nil {
 			return err
 		}
@@ -101,6 +105,7 @@ func PullIfNeeded(vaultPath string) error {
 		if err != nil {
 			return err
 		}
+		log.Println("Sync to remote successful.")
 	}
 
 	return nil

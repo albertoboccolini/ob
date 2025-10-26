@@ -17,8 +17,6 @@ func syncToRemote(vaultPath string) {
 		log.Println("Error syncing vault:", err)
 		return
 	}
-
-	log.Println("Sync to remote successful.")
 }
 
 func syncVault(vaultPath string) {
@@ -72,7 +70,7 @@ func RunDaemon() {
 	defer syncToRemoteTicker.Stop()
 	defer syncVaultTicker.Stop()
 
-	log.Println("Starting sync operations...")
+	log.Println("Started sync operations...")
 
 	syncVault(vaultPath)
 	syncToRemote(vaultPath)
