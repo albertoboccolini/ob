@@ -11,14 +11,6 @@ import (
 	"ob/services/git"
 )
 
-func syncToRemote(vaultPath string) {
-	err := git.PullIfNeeded(vaultPath)
-	if err != nil {
-		log.Println("Error syncing vault:", err)
-		return
-	}
-}
-
 func syncVault(vaultPath string) {
 	hasChanges, err := git.HasUncommittedChanges(vaultPath)
 	if err != nil {
@@ -38,6 +30,22 @@ func syncVault(vaultPath string) {
 	}
 }
 
+func completeSync(vaultPath string) {
+	err := git.PullIfNeeded(vaultPath)
+	if err != nil {
+		log.Println("Error syncing vault:", err)
+		return
+	}
+
+	syncVault(vaultPath)
+
+	err = git.SquashAndPushIfNeeded(vaultPath)
+	if err != nil {
+		log.Println("Error syncing vault:", err)
+		return
+	}
+}
+
 func ManualSync() {
 	log.Println("Manual sync...")
 	data, err := os.ReadFile(config.GetConfigFile())
@@ -46,8 +54,7 @@ func ManualSync() {
 	}
 
 	vaultPath := strings.TrimSpace(string(data))
-	syncVault(vaultPath)
-	syncToRemote(vaultPath)
+	completeSync(vaultPath)
 }
 
 func RunDaemon() {
@@ -84,15 +91,20 @@ func RunDaemon() {
 
 	log.Println("Started sync operations...")
 
-	syncVault(vaultPath)
-	syncToRemote(vaultPath)
+	err = git.PullIfNeeded(vaultPath)
+	if err != nil {
+		log.Println("Error syncing vault:", err)
+		return
+	}
+
+	completeSync(vaultPath)
 
 	for {
 		select {
 		case <-syncVaultTicker.C:
 			syncVault(vaultPath)
 		case <-syncToRemoteTicker.C:
-			syncToRemote(vaultPath)
+			completeSync(vaultPath)
 		}
 	}
 }
