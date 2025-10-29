@@ -1,7 +1,6 @@
 package sync
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -49,7 +48,6 @@ func ManualSync() {
 	vaultPath := strings.TrimSpace(string(data))
 	syncVault(vaultPath)
 	syncToRemote(vaultPath)
-	fmt.Println("Manual sync completed")
 }
 
 func RunDaemon() {
