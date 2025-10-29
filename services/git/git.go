@@ -79,11 +79,19 @@ func PullIfNeeded(vaultPath string) error {
 		if err != nil {
 			return err
 		}
-		return nil
+		log.Println("Pulled changes from remote.")
 	}
 
-	// Check if local is ahead and push if needed
-	lines, err = IssueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "origin/main..HEAD"})
+	return nil
+}
+
+func SquashAndPushIfNeeded(vaultPath string) error {
+	_, err := IssueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
+	if err != nil {
+		return err
+	}
+
+	lines, err := IssueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "origin/main..HEAD"})
 	if err != nil {
 		return err
 	}
