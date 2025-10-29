@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -36,6 +37,19 @@ func syncVault(vaultPath string) {
 		log.Println("Changes committed successfully.")
 		return
 	}
+}
+
+func ManualSync() {
+	log.Println("Manual sync...")
+	data, err := os.ReadFile(config.GetConfigFile())
+	if err != nil {
+		log.Fatal("Error reading vault path from config:", err)
+	}
+
+	vaultPath := strings.TrimSpace(string(data))
+	syncVault(vaultPath)
+	syncToRemote(vaultPath)
+	fmt.Println("Manual sync completed")
 }
 
 func RunDaemon() {

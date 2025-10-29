@@ -119,6 +119,8 @@ func main() {
 		}
 		vaultPath := flag.Arg(1)
 		startSync(vaultPath)
+	case "sync":
+		sync.ManualSync()
 	case "stop":
 		stopSync()
 	case "boot":
