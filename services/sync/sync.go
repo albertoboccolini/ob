@@ -90,13 +90,6 @@ func RunDaemon() {
 	defer syncVaultTicker.Stop()
 
 	log.Println("Started sync operations...")
-
-	err = git.PullIfNeeded(vaultPath)
-	if err != nil {
-		log.Println("Error syncing vault:", err)
-		return
-	}
-
 	completeSync(vaultPath)
 
 	for {
