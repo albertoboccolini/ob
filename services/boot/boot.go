@@ -106,10 +106,7 @@ func enableBootService(vaultPath string) error {
 		return fmt.Errorf("failed to enable service: %w", err)
 	}
 
-	if err := runSystemctl("start", "ob.service"); err != nil {
-		return fmt.Errorf("failed to start service: %w", err)
-	}
-
+	log.Println("Boot enabled successfully")
 	fmt.Println("Boot enabled successfully")
 	return nil
 }
@@ -134,6 +131,7 @@ func disableBootService() error {
 		return fmt.Errorf("failed to reload systemd: %w", err)
 	}
 
+	log.Println("Boot disabled successfully")
 	fmt.Println("Boot disabled successfully")
 	return nil
 }

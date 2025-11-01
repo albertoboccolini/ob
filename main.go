@@ -76,6 +76,7 @@ func stopSync() {
 		os.Exit(1)
 	}
 
+	log.Println("Sync stopped")
 	fmt.Println("Sync stopped")
 }
 
