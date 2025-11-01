@@ -3,6 +3,7 @@ package git
 import (
 	"log"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -96,25 +97,35 @@ func SquashAndPushIfNeeded(vaultPath string) error {
 		return err
 	}
 
-	if len(lines) > 0 && lines[0] != "0" {
-		// Squash commits and push
-		_, err = IssueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "origin/main"})
-		if err != nil {
-			return err
-		}
-
-		numCommits := lines[0]
-		_, err = IssueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + numCommits + " commits by ob"})
-		if err != nil {
-			return err
-		}
-
-		err = PushChanges(vaultPath)
-		if err != nil {
-			return err
-		}
-		log.Println("Sync to remote successful.")
+	if len(lines) == 0 {
+		return nil
 	}
 
+	numCommits, err := strconv.Atoi(lines[0])
+	if err != nil {
+		return err
+	}
+
+	if numCommits < 25 {
+		return nil
+	}
+
+	// Squash commits and push
+	_, err = IssueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "origin/main"})
+	if err != nil {
+		return err
+	}
+
+	_, err = IssueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + strconv.Itoa(numCommits) + " commits by ob"})
+	if err != nil {
+		return err
+	}
+
+	err = PushChanges(vaultPath)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Sync to remote successful.")
 	return nil
 }
