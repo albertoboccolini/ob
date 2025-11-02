@@ -93,11 +93,12 @@ func main() {
 	defer logger.Close()
 
 	daemon := flag.Bool("daemon", false, "Run as daemon")
-	version := flag.Bool("version", false, "Show version information")
-	versionShort := flag.Bool("v", false, "Show version information (shorthand)")
+	var version bool
+	flag.BoolVar(&version, "version", false, "Show version information")
+	flag.BoolVar(&version, "v", false, "Show version information (shorthand)")
 	flag.Parse()
 
-	if *version || *versionShort {
+	if version {
 		fmt.Printf("v%s\n", config.OB_VERSION)
 		return
 	}
