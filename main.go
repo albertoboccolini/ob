@@ -93,7 +93,14 @@ func main() {
 	defer logger.Close()
 
 	daemon := flag.Bool("daemon", false, "Run as daemon")
+	version := flag.Bool("version", false, "Show version information")
+	versionShort := flag.Bool("v", false, "Show version information (shorthand)")
 	flag.Parse()
+
+	if *version || *versionShort {
+		fmt.Printf("v%s\n", config.OB_VERSION)
+		return
+	}
 
 	if *daemon {
 		sync.RunDaemon()
@@ -102,10 +109,14 @@ func main() {
 
 	if flag.NArg() < 1 {
 		fmt.Println("Usage: ob <command>")
-		fmt.Println("Commands:")
+		fmt.Println("\nCommands:")
 		fmt.Println("  start <vault-path>    Start the sync operations")
 		fmt.Println("  stop                  Stop the sync operations")
 		fmt.Println("  boot <enable|disable> Enable or disable ob to start on boot")
+		fmt.Println("  sync                  Trigger a manual sync")
+		fmt.Println("  version               Show the version information")
+		fmt.Println("\nFlags:")
+		fmt.Println("  -v, --version         Show the version information")
 		os.Exit(1)
 	}
 
@@ -127,6 +138,8 @@ func main() {
 		stopSync()
 	case "boot":
 		boot.HandleBootCommand()
+	case "version":
+		fmt.Printf("v%s\n", config.OB_VERSION)
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		os.Exit(1)
