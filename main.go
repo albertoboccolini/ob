@@ -16,6 +16,8 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+const obStopMessage = "Sync stopped"
+
 func isProcessRunning(pid int) bool {
 	process, err := os.FindProcess(pid)
 	if err != nil {
@@ -76,8 +78,8 @@ func stopSync() {
 		os.Exit(1)
 	}
 
-	log.Println("Sync stopped")
-	fmt.Println("Sync stopped")
+	log.Println(obStopMessage)
+	fmt.Println(obStopMessage)
 }
 
 func main() {

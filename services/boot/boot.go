@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+const bootDisableMessage = "Boot disabled successfully"
+const bootEnableMessage = "Boot enabled successfully"
+
 const serviceTemplate = `[Unit]
 Description=ob Service
 After=network-online.target ssh-agent.service
@@ -106,8 +109,8 @@ func enableBootService(vaultPath string) error {
 		return fmt.Errorf("failed to enable service: %w", err)
 	}
 
-	log.Println("Boot enabled successfully")
-	fmt.Println("Boot enabled successfully")
+	log.Println(bootEnableMessage)
+	fmt.Println(bootEnableMessage)
 	return nil
 }
 
@@ -131,8 +134,8 @@ func disableBootService() error {
 		return fmt.Errorf("failed to reload systemd: %w", err)
 	}
 
-	log.Println("Boot disabled successfully")
-	fmt.Println("Boot disabled successfully")
+	log.Println(bootDisableMessage)
+	fmt.Println(bootDisableMessage)
 	return nil
 }
 
