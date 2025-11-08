@@ -30,7 +30,8 @@ func syncVault(vaultPath string) {
 	}
 }
 
-func completeSync(vaultPath string) {
+func completeSync(vaultPath string, manualSync ...bool) {
+	threshold := 25
 	err := git.PullIfNeeded(vaultPath)
 	if err != nil {
 		log.Println("Error syncing vault:", err)
@@ -39,7 +40,13 @@ func completeSync(vaultPath string) {
 
 	syncVault(vaultPath)
 
-	err = git.SquashAndPushIfNeeded(vaultPath)
+	isManualSync := len(manualSync) > 0 && manualSync[0]
+
+	if isManualSync {
+		threshold = 0
+	}
+
+	err = git.SquashAndPushIfNeeded(vaultPath, threshold)
 	if err != nil {
 		log.Println("Error syncing vault:", err)
 		return
@@ -54,7 +61,7 @@ func ManualSync() {
 	}
 
 	vaultPath := strings.TrimSpace(string(data))
-	completeSync(vaultPath)
+	completeSync(vaultPath, true)
 }
 
 func RunDaemon() {
