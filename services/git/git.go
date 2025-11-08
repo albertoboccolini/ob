@@ -106,7 +106,7 @@ func SquashAndPushIfNeeded(vaultPath string, commitThreshold int) error {
 		return err
 	}
 
-	if numCommits < commitThreshold {
+	if numCommits == 0 || numCommits < commitThreshold {
 		return nil
 	}
 
