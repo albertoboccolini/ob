@@ -86,7 +86,7 @@ func PullIfNeeded(vaultPath string) error {
 	return nil
 }
 
-func SquashAndPushIfNeeded(vaultPath string) error {
+func SquashAndPushIfNeeded(vaultPath string, commitThreshold int) error {
 	_, err := IssueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func SquashAndPushIfNeeded(vaultPath string) error {
 		return err
 	}
 
-	if numCommits < 25 {
+	if numCommits == 0 || numCommits < commitThreshold {
 		return nil
 	}
 
