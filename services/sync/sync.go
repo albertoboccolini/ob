@@ -91,20 +91,13 @@ func RunDaemon() {
 
 	defer os.Remove(pidFile)
 
-	syncToRemoteTicker := time.NewTicker(12 * time.Hour)
 	syncVaultTicker := time.NewTicker(1 * time.Minute)
-	defer syncToRemoteTicker.Stop()
 	defer syncVaultTicker.Stop()
 
 	log.Println("Started sync operations...")
 	completeSync(vaultPath)
 
-	for {
-		select {
-		case <-syncVaultTicker.C:
-			syncVault(vaultPath)
-		case <-syncToRemoteTicker.C:
-			completeSync(vaultPath)
-		}
+	for range syncVaultTicker.C {
+		completeSync(vaultPath)
 	}
 }
