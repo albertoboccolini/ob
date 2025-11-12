@@ -24,7 +24,7 @@ This project requires **Go version 1.25.2 or higher**. Make sure you have a comp
     ob start <vault_path>
     ```
 
-## Additional
+## Other ob commands
 
 - **Stop ob**: Stops the synchronization process.
 
@@ -32,19 +32,56 @@ This project requires **Go version 1.25.2 or higher**. Make sure you have a comp
     ob stop
     ```
 
+- **Manual sync**: Triggers an immediate synchronization, bypassing the local commit threshold and pushing changes directly to the remote repository.
+
+    ```
+    ob sync
+    ```
+
+- **Enable ob at startup**: Enables the system service to automatically start ob at system startup.
+
+    ```
+    ob boot enable
+    ```
+
+- **Disable ob at startup**: Disables and removes the system service that automatically starts ob at system startup.
+
+    ```
+    ob boot disable
+    ```
+
+- **Show ob version**: Displays the currently installed version of ob.
+
+    ```
+    ob  version | -v | --version
+    ```
+
+## Vault Requirements
+
+Since `ob` does not yet provide an initialization command to automate repository setup, your vault must meet the following prerequisites before synchronization can begin:
+
+- The vault must already be an initialized Git repository
+- A remote must be configured
+- Authentication with the remote must already be set up
+- The working branch must exist both locally and on the remote
+
+These requirements ensure that `ob` can immediately start synchronizing your vault without additional configuration steps.
+
+## Project hints
+
 - **Uninstall**: Removes ob from your system.
 
     ```bash
     rm -rf ~/go/bin/ob
     ```
 
-- **Compile** (for development purpouses only)
+- **Compile** (for development purposes only)
 
     ```bash
     go build
     ```
 
-- **Lint code** (for development purpouses only)
+- **Lint code** (for development purposes only)
 
     ```bash
     go fmt ./...
