@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os/exec"
@@ -11,12 +12,16 @@ import (
 func issueCommand(command string, args []string) ([]string, error) {
 	cmd := exec.Command(command, args...)
 
-	out, err := cmd.CombinedOutput()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s", err, string(out))
+		return nil, fmt.Errorf("%w: %s", err, stderr.String())
 	}
 
-	output := strings.TrimSpace(string(out))
+	output := strings.TrimSpace(stdout.String())
 	if output == "" {
 		return []string{}, nil
 	}
