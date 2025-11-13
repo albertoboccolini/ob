@@ -1,18 +1,19 @@
 package git
 
 import (
+	"fmt"
 	"log"
 	"os/exec"
 	"strconv"
 	"strings"
 )
 
-func IssueCommand(command string, args []string) ([]string, error) {
+func issueCommand(command string, args []string) ([]string, error) {
 	cmd := exec.Command(command, args...)
 
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %s", err, string(out))
 	}
 
 	output := strings.TrimSpace(string(out))
@@ -25,7 +26,7 @@ func IssueCommand(command string, args []string) ([]string, error) {
 }
 
 func HasUncommittedChanges(vaultPath string) (bool, error) {
-	lines, err := IssueCommand("git", []string{"-C", vaultPath, "status", "--porcelain"})
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "status", "--porcelain"})
 	if err != nil {
 		return false, err
 	}
@@ -42,12 +43,12 @@ func HasUncommittedChanges(vaultPath string) (bool, error) {
 }
 
 func CommitChanges(vaultPath string) error {
-	_, err := IssueCommand("git", []string{"-C", vaultPath, "add", "."})
+	_, err := issueCommand("git", []string{"-C", vaultPath, "add", "."})
 	if err != nil {
 		return err
 	}
 
-	_, err = IssueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Auto commit by ob"})
+	_, err = issueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Auto commit by ob"})
 	if err != nil {
 		return err
 	}
@@ -56,7 +57,7 @@ func CommitChanges(vaultPath string) error {
 }
 
 func PushChanges(vaultPath string) error {
-	_, err := IssueCommand("git", []string{"-C", vaultPath, "push", "origin", "main"})
+	_, err := issueCommand("git", []string{"-C", vaultPath, "push", "origin", "main"})
 	if err != nil {
 		return err
 	}
@@ -65,18 +66,18 @@ func PushChanges(vaultPath string) error {
 }
 
 func PullIfNeeded(vaultPath string) error {
-	_, err := IssueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
+	_, err := issueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
 	if err != nil {
 		return err
 	}
 
-	lines, err := IssueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "HEAD..origin/main"})
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "HEAD..origin/main"})
 	if err != nil {
 		return err
 	}
 
 	if len(lines) > 0 && lines[0] != "0" {
-		_, err = IssueCommand("git", []string{"-C", vaultPath, "pull", "-X", "theirs", "origin", "main"})
+		_, err = issueCommand("git", []string{"-C", vaultPath, "pull", "-X", "theirs", "origin", "main"})
 		if err != nil {
 			return err
 		}
@@ -87,12 +88,12 @@ func PullIfNeeded(vaultPath string) error {
 }
 
 func SquashAndPushIfNeeded(vaultPath string, commitThreshold int) error {
-	_, err := IssueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
+	_, err := issueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
 	if err != nil {
 		return err
 	}
 
-	lines, err := IssueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "origin/main..HEAD"})
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "origin/main..HEAD"})
 	if err != nil {
 		return err
 	}
@@ -111,12 +112,12 @@ func SquashAndPushIfNeeded(vaultPath string, commitThreshold int) error {
 	}
 
 	// Squash commits and push
-	_, err = IssueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "origin/main"})
+	_, err = issueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "origin/main"})
 	if err != nil {
 		return err
 	}
 
-	_, err = IssueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + strconv.Itoa(numCommits) + " commits by ob"})
+	_, err = issueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + strconv.Itoa(numCommits) + " commits by ob"})
 	if err != nil {
 		return err
 	}
