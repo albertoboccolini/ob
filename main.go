@@ -27,6 +27,18 @@ func isProcessRunning(pid int) bool {
 	return err == nil
 }
 
+func printLogs() {
+	logFile := config.GetLogFile()
+	data, err := os.ReadFile(logFile)
+
+	if err != nil {
+		fmt.Printf("Error reading log file: %v\n", err)
+		return
+	}
+
+	fmt.Println(string(data))
+}
+
 func startSync(vaultPath string) {
 	pidFile := config.GetPidFile()
 	if data, err := os.ReadFile(pidFile); err == nil {
@@ -117,6 +129,7 @@ func main() {
 		fmt.Println("  stop                  Stop the sync operations")
 		fmt.Println("  boot <enable|disable> Enable or disable ob to start on boot")
 		fmt.Println("  sync                  Trigger a manual sync")
+		fmt.Println("  logs                  Display the logs")
 		fmt.Println("  version               Show the version information")
 		fmt.Println("\nFlags:")
 		fmt.Println("  -v, --version         Show the version information")
@@ -141,6 +154,8 @@ func main() {
 		stopSync()
 	case "boot":
 		boot.HandleBootCommand()
+	case "logs":
+		printLogs()
 	case "version":
 		fmt.Printf("v%s\n", config.OB_VERSION)
 	default:
