@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"ob/services/boot"
 	"ob/services/config"
@@ -29,14 +30,17 @@ func isProcessRunning(pid int) bool {
 
 func printLogs() {
 	logFile := config.GetLogFile()
-	data, err := os.ReadFile(logFile)
-
+	file, err := os.Open(logFile)
 	if err != nil {
 		fmt.Printf("Error reading log file: %v\n", err)
 		return
 	}
+	defer file.Close()
 
-	fmt.Println(string(data))
+	_, err = io.Copy(os.Stdout, file)
+	if err != nil {
+		fmt.Printf("Error printing log file: %v\n", err)
+	}
 }
 
 func startSync(vaultPath string) {
