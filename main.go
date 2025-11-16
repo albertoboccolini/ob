@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"ob/services/boot"
 	"ob/services/config"
@@ -25,6 +26,21 @@ func isProcessRunning(pid int) bool {
 	}
 	err = process.Signal(syscall.Signal(0))
 	return err == nil
+}
+
+func printLogs() {
+	logFile := config.GetLogFile()
+	file, err := os.Open(logFile)
+	if err != nil {
+		fmt.Printf("Error reading log file: %v\n", err)
+		return
+	}
+	defer file.Close()
+
+	_, err = io.Copy(os.Stdout, file)
+	if err != nil {
+		fmt.Printf("Error printing log file: %v\n", err)
+	}
 }
 
 func startSync(vaultPath string) {
@@ -117,6 +133,7 @@ func main() {
 		fmt.Println("  stop                  Stop the sync operations")
 		fmt.Println("  boot <enable|disable> Enable or disable ob to start on boot")
 		fmt.Println("  sync                  Trigger a manual sync")
+		fmt.Println("  logs                  Display the logs")
 		fmt.Println("  version               Show the version information")
 		fmt.Println("\nFlags:")
 		fmt.Println("  -v, --version         Show the version information")
@@ -141,6 +158,8 @@ func main() {
 		stopSync()
 	case "boot":
 		boot.HandleBootCommand()
+	case "logs":
+		printLogs()
 	case "version":
 		fmt.Printf("v%s\n", config.OB_VERSION)
 	default:

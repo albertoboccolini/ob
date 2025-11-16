@@ -50,6 +50,12 @@ This project requires **Go version 1.25.2 or higher**. Make sure you have a comp
     ob boot disable
     ```
 
+- **Show the logs**: Displays all logs produced by ob directly in the terminal.
+
+    ```
+    ob logs
+    ```
+
 - **Show ob version**: Displays the currently installed version of ob.
 
     ```
