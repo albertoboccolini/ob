@@ -139,6 +139,14 @@ func disableBootService() error {
 	return nil
 }
 
+func IsBootEnabled() bool {
+	servicePath := getServicePath()
+	if _, err := os.Stat(servicePath); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
 func HandleBootCommand() {
 	if len(os.Args) < 3 {
 		fmt.Println("Error: boot subcommand required (enable|disable)")

@@ -7,6 +7,7 @@ import (
 	"log"
 	"ob/services/boot"
 	"ob/services/config"
+	"ob/services/git"
 	"ob/services/sync"
 	"os"
 	"os/exec"
@@ -98,6 +99,18 @@ func stopSync() {
 	fmt.Println(obStopMessage)
 }
 
+func isSyncRunning() bool {
+	data, err := os.ReadFile(config.GetPidFile())
+	if err != nil {
+		return false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil {
+		return false
+	}
+	return isProcessRunning(pid)
+}
+
 func main() {
 	config.InitConfig()
 	logger := &lumberjack.Logger{
@@ -133,6 +146,7 @@ func main() {
 		fmt.Println("  stop                  Stop the sync operations")
 		fmt.Println("  boot <enable|disable> Enable or disable ob to start on boot")
 		fmt.Println("  sync                  Trigger a manual sync")
+		fmt.Println("  status                Show the sync status and other useful information")
 		fmt.Println("  logs                  Display the logs")
 		fmt.Println("  version               Show the version information")
 		fmt.Println("\nFlags:")
@@ -160,6 +174,24 @@ func main() {
 		boot.HandleBootCommand()
 	case "logs":
 		printLogs()
+	case "status":
+		data, err := os.ReadFile(config.GetConfigFile())
+		if err != nil {
+			log.Fatal("Error reading vault path from config:", err)
+		}
+
+		vaultPath := strings.TrimSpace(string(data))
+		commits, err := git.GetCommitsDifference(vaultPath)
+
+		if err != nil {
+			log.Fatal("Error checking sync status:", err)
+		}
+
+		fmt.Printf("Sync is running: %t\n", isSyncRunning())
+		fmt.Printf("Boot enabled: %t\n", boot.IsBootEnabled())
+		fmt.Printf("Commits ahead of remote: %d\n", commits)
+		fmt.Printf("Vault: %s\n", vaultPath)
+		fmt.Printf("Logs: %s\n", config.GetLogFile())
 	case "version":
 		fmt.Printf("v%s\n", config.OB_VERSION)
 	default:

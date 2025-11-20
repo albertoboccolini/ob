@@ -24,30 +24,12 @@ This project requires **Go version 1.25.2 or higher**. Make sure you have a comp
     ob start <vault_path>
     ```
 
-## Other ob commands
+## Other useful ob commands
 
-- **Stop ob**: Stops the synchronization process.
-
-    ```
-    ob stop
-    ```
-
-- **Manual sync**: Triggers an immediate synchronization, bypassing the local commit threshold and pushing changes directly to the remote repository.
+- **Show ob status**: Displays the sync status, whether boot is enabled, and other useful information.
 
     ```
-    ob sync
-    ```
-
-- **Enable ob at startup**: Enables the system service to automatically start ob at system startup.
-
-    ```
-    ob boot enable
-    ```
-
-- **Disable ob at startup**: Disables and removes the system service that automatically starts ob at system startup.
-
-    ```
-    ob boot disable
+    ob status
     ```
 
 - **Show the logs**: Displays all logs produced by ob directly in the terminal.
@@ -56,10 +38,16 @@ This project requires **Go version 1.25.2 or higher**. Make sure you have a comp
     ob logs
     ```
 
-- **Show ob version**: Displays the currently installed version of ob.
+- **Enable or disable ob at startup**: Controls whether the system service automatically starts **ob** at boot.
 
     ```
-    ob  version | -v | --version
+    ob boot <enable|disable>
+    ```
+
+- **Manual sync**: Triggers an immediate synchronization, bypassing the local commit threshold and pushing changes directly to the remote repository.
+
+    ```
+    ob sync
     ```
 
 ## Vault Requirements
