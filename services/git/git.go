@@ -36,10 +36,6 @@ func GetCommitsDifference(vaultPath string) (int, error) {
 		return 0, err
 	}
 
-	if len(lines) == 0 {
-		return 0, nil
-	}
-
 	return len(lines), nil
 }
 
