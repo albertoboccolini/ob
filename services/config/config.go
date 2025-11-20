@@ -11,7 +11,7 @@ var (
 	pidFile    string
 	logFile    string
 	configFile string
-	OB_VERSION = "0.0.4"
+	OB_VERSION = "0.0.5"
 )
 
 func InitConfig() {
