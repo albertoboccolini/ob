@@ -30,6 +30,19 @@ func issueCommand(command string, args []string) ([]string, error) {
 	return lines, nil
 }
 
+func GetCommitsDifference(vaultPath string) (int, error) {
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "log", "--oneline", "origin/main..HEAD"})
+	if err != nil {
+		return 0, err
+	}
+
+	if len(lines) == 0 {
+		return 0, nil
+	}
+
+	return len(lines), nil
+}
+
 func HasUncommittedChanges(vaultPath string) (bool, error) {
 	lines, err := issueCommand("git", []string{"-C", vaultPath, "status", "--porcelain"})
 	if err != nil {
