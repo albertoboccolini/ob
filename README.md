@@ -10,7 +10,7 @@ Any contributions are highly welcome! Whether it’s fixing bugs, improving auto
 
 ## Getting Started
 
-This project requires **Go version 1.25.2 or higher**. Make sure you have a compatible version installed. If needed, download the latest version from [https://go.dev/dl/](https://go.dev/dl/)
+This project requires **Go version 1.25.4 or higher**. Make sure you have a compatible version installed. If needed, download the latest version from [https://go.dev/dl/](https://go.dev/dl/)
 
 1. **Installation**: Installs ob in the system
 
