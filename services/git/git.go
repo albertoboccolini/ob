@@ -37,7 +37,7 @@ func GetLastCommitTime(vaultPath string, ref string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	if len(lines) == 0 || lines[0] == "" {
+	if len(lines) == 0 {
 		return time.Time{}, fmt.Errorf("no commits found for ref: %s", ref)
 	}
 

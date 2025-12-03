@@ -189,7 +189,7 @@ func main() {
 
 		lastLocalCommit, err := git.GetLastCommitTime(vaultPath, "HEAD")
 		if err != nil {
-			log.Fatal("Error getting last commit time:", err)
+			log.Fatal("Error getting last local commit time:", err)
 		}
 
 		lastRemoteCommit, err := git.GetLastCommitTime(vaultPath, "origin/main")
