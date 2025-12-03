@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func issueCommand(command string, args []string) ([]string, error) {
@@ -28,6 +29,24 @@ func issueCommand(command string, args []string) ([]string, error) {
 
 	lines := strings.Split(output, "\n")
 	return lines, nil
+}
+
+func GetLastCommitTime(vaultPath string, ref string) (time.Time, error) {
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "log", "-1", "--format=%ct", ref})
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if len(lines) == 0 {
+		return time.Time{}, fmt.Errorf("no commits found for ref: %s", ref)
+	}
+
+	timestamp, err := strconv.ParseInt(lines[0], 10, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Unix(timestamp, 0), nil
 }
 
 func GetCommitsDifference(vaultPath string) (int, error) {
