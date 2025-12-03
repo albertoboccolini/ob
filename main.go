@@ -187,8 +187,20 @@ func main() {
 			log.Fatal("Error checking sync status:", err)
 		}
 
+		lastLocalCommit, err := git.GetLastCommitTime(vaultPath, "HEAD")
+		if err != nil {
+			log.Fatal("Error getting last commit time:", err)
+		}
+
+		lastRemoteCommit, err := git.GetLastCommitTime(vaultPath, "origin/main")
+		if err != nil {
+			log.Fatal("Error getting last remote commit time:", err)
+		}
+
 		fmt.Printf("Sync is running: %t\n", isSyncRunning())
 		fmt.Printf("Boot enabled: %t\n", boot.IsBootEnabled())
+		fmt.Printf("Last local commit: %s\n", lastLocalCommit.Local().Format("02/01/2006 15:04"))
+		fmt.Printf("Last remote commit: %s\n", lastRemoteCommit.Local().Format("02/01/2006 15:04"))
 		fmt.Printf("Commits ahead of remote: %d\n", commits)
 		fmt.Printf("Vault: %s\n", vaultPath)
 		fmt.Printf("Logs: %s\n", config.GetLogFile())
