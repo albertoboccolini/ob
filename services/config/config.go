@@ -11,8 +11,9 @@ var (
 	pidFile    string
 	logFile    string
 	configFile string
-	OB_VERSION = "0.0.6"
 )
+
+const OB_VERSION = "0.0.6"
 
 func InitConfig() {
 	home, err := os.UserHomeDir()
