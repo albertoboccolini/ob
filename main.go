@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"ob/services/boot"
-	"ob/services/config"
-	"ob/services/git"
-	"ob/services/sync"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/albertoboccolini/ob/services/boot"
+	"github.com/albertoboccolini/ob/services/config"
+	"github.com/albertoboccolini/ob/services/git"
+	"github.com/albertoboccolini/ob/services/sync"
 
 	"gopkg.in/natefinch/lumberjack.v2"
 )

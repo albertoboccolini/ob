@@ -3,11 +3,12 @@ package boot
 import (
 	"fmt"
 	"log"
-	"ob/services/config"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/albertoboccolini/ob/services/config"
 )
 
 const bootDisableMessage = "Boot disabled successfully"

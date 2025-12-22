@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"ob/services/config"
-	"ob/services/git"
+	"github.com/albertoboccolini/ob/services/config"
+	"github.com/albertoboccolini/ob/services/git"
 )
 
 func syncVault(vaultPath string) {

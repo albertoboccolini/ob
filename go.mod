@@ -1,4 +1,4 @@
-module ob
+module github.com/albertoboccolini/ob
 
 go 1.25.4
 
