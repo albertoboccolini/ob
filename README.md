@@ -15,7 +15,7 @@ This project requires **Go version 1.25.4 or higher**. Make sure you have a comp
 1. **Installation**: Installs ob in the system
 
     ```bash
-    go install
+    go install github.com/albertoboccolini/ob@latest
     ```
 
 2. **Start ob**: Starts synchronization in the background
