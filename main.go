@@ -146,6 +146,7 @@ func main() {
 		fmt.Println("  stop                  Stop the sync operations")
 		fmt.Println("  boot <enable|disable> Enable or disable ob to start on boot")
 		fmt.Println("  sync                  Trigger a manual sync")
+		fmt.Println("  squash <num>          Squash last N squashed commits together")
 		fmt.Println("  status                Show the sync status and other useful information")
 		fmt.Println("  logs                  Display the logs")
 		fmt.Println("  version               Show the version information")
@@ -168,6 +169,29 @@ func main() {
 	case "sync":
 		sync.ManualSync()
 		fmt.Println("Manual sync completed")
+	case "squash":
+		if flag.NArg() < 2 {
+			fmt.Println("Error: number of commits is required")
+			fmt.Println("Usage: ob squash <num>")
+			os.Exit(1)
+		}
+		numCommits, err := strconv.Atoi(flag.Arg(1))
+		if err != nil || numCommits < 1 {
+			fmt.Println("Error: invalid number of commits")
+			os.Exit(1)
+		}
+		data, err := os.ReadFile(config.GetConfigFile())
+		if err != nil {
+			fmt.Println("Error reading vault path from config:", err)
+			os.Exit(1)
+		}
+		vaultPath := strings.TrimSpace(string(data))
+		err = git.SquashCommits(vaultPath, numCommits)
+		if err != nil {
+			fmt.Println("Error squashing commits:", err)
+			os.Exit(1)
+		}
+		fmt.Println("Commits squashed successfully")
 	case "stop":
 		stopSync()
 	case "boot":

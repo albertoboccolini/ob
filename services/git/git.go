@@ -163,3 +163,82 @@ func SquashAndPushIfNeeded(vaultPath string, commitThreshold int) error {
 	log.Println("Sync to remote successful.")
 	return nil
 }
+
+func SquashCommits(vaultPath string, numSquashedCommits int) error {
+	_, err := issueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
+	if err != nil {
+		return err
+	}
+
+	localCommits, err := GetCommitsDifference(vaultPath)
+	if err != nil {
+		return err
+	}
+
+	if localCommits > 0 {
+		_, err = issueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "origin/main"})
+		if err != nil {
+			return err
+		}
+
+		_, err = issueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + strconv.Itoa(localCommits) + " commits by ob"})
+		if err != nil {
+			return err
+		}
+
+		err = PushChanges(vaultPath)
+		if err != nil {
+			return err
+		}
+
+		log.Println("Local commits squashed and pushed.")
+	}
+
+	_, err = issueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
+	if err != nil {
+		return err
+	}
+
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "log", "--oneline", "-" + strconv.Itoa(numSquashedCommits)})
+	if err != nil {
+		return err
+	}
+
+	totalCommits := 0
+	for _, line := range lines {
+		if strings.Contains(line, "Squashed") && strings.Contains(line, "commits by ob") {
+			parts := strings.Split(line, " ")
+			for i, part := range parts {
+				if part == "Squashed" && i+1 < len(parts) {
+					count, err := strconv.Atoi(parts[i+1])
+					if err == nil {
+						totalCommits += count
+					}
+					break
+				}
+			}
+		}
+	}
+
+	if totalCommits == 0 {
+		return fmt.Errorf("no squashed commits found to merge")
+	}
+
+	_, err = issueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "HEAD~" + strconv.Itoa(numSquashedCommits)})
+	if err != nil {
+		return err
+	}
+
+	_, err = issueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + strconv.Itoa(totalCommits) + " commits by ob"})
+	if err != nil {
+		return err
+	}
+
+	_, err = issueCommand("git", []string{"-C", vaultPath, "push", "--force", "origin", "main"})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Squashed %d commits into one.", numSquashedCommits)
+	return nil
+}
