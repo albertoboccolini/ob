@@ -164,7 +164,7 @@ func SquashAndPushIfNeeded(vaultPath string, commitThreshold int) error {
 	return nil
 }
 
-func SquashCommits(vaultPath string, numSquashedCommits int) error {
+func SquashCommits(vaultPath string, numCommits int) error {
 	_, err := issueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
 	if err != nil {
 		return err
@@ -194,12 +194,7 @@ func SquashCommits(vaultPath string, numSquashedCommits int) error {
 		log.Println("Local commits squashed and pushed.")
 	}
 
-	_, err = issueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
-	if err != nil {
-		return err
-	}
-
-	lines, err := issueCommand("git", []string{"-C", vaultPath, "log", "--oneline", "-" + strconv.Itoa(numSquashedCommits)})
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "log", "--oneline", "-" + strconv.Itoa(numCommits)})
 	if err != nil {
 		return err
 	}
@@ -221,12 +216,31 @@ func SquashCommits(vaultPath string, numSquashedCommits int) error {
 	}
 
 	if totalCommits == 0 {
-		return fmt.Errorf("no squashed commits found to merge")
+		return fmt.Errorf("no squashed commits found in the last %d commits. Ensure you're targeting commits with the format 'Squashed N commits by ob'", numCommits)
 	}
 
-	_, err = issueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "HEAD~" + strconv.Itoa(numSquashedCommits)})
+	_, err = issueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "HEAD~" + strconv.Itoa(numCommits)})
 	if err != nil {
 		return err
+	}
+
+	// Ensure numSquashedCommits does not exceed the number of available commits.
+	lines, err = issueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "HEAD"})
+	if err != nil {
+		return err
+	}
+
+	if len(lines) == 0 {
+		return fmt.Errorf("unable to determine commit count")
+	}
+
+	commitCount, err := strconv.Atoi(strings.TrimSpace(lines[0]))
+	if err != nil {
+		return fmt.Errorf("invalid commit count: %w", err)
+	}
+
+	if numCommits > commitCount {
+		return fmt.Errorf("cannot squash %d commits; repository only has %d commits", numCommits, commitCount)
 	}
 
 	_, err = issueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + strconv.Itoa(totalCommits) + " commits by ob"})
@@ -239,6 +253,6 @@ func SquashCommits(vaultPath string, numSquashedCommits int) error {
 		return err
 	}
 
-	log.Printf("Squashed %d commits into one.", numSquashedCommits)
+	log.Printf("Squashed %d squash-commits representing %d total commits into one.", numCommits, totalCommits)
 	return nil
 }

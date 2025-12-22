@@ -146,7 +146,7 @@ func main() {
 		fmt.Println("  stop                  Stop the sync operations")
 		fmt.Println("  boot <enable|disable> Enable or disable ob to start on boot")
 		fmt.Println("  sync                  Trigger a manual sync")
-		fmt.Println("  squash <num>          Squash last N squashed commits together")
+		fmt.Println("  squash <num>          Merge last N squashed commits into a single commit")
 		fmt.Println("  status                Show the sync status and other useful information")
 		fmt.Println("  logs                  Display the logs")
 		fmt.Println("  version               Show the version information")
