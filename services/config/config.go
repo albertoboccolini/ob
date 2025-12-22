@@ -13,7 +13,7 @@ var (
 	configFile string
 )
 
-const OB_VERSION = "0.0.6"
+const OB_VERSION = "0.0.7"
 
 func InitConfig() {
 	home, err := os.UserHomeDir()
