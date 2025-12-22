@@ -163,3 +163,96 @@ func SquashAndPushIfNeeded(vaultPath string, commitThreshold int) error {
 	log.Println("Sync to remote successful.")
 	return nil
 }
+
+func SquashCommits(vaultPath string, numCommits int) error {
+	_, err := issueCommand("git", []string{"-C", vaultPath, "fetch", "origin", "main"})
+	if err != nil {
+		return err
+	}
+
+	localCommits, err := GetCommitsDifference(vaultPath)
+	if err != nil {
+		return err
+	}
+
+	if localCommits > 0 {
+		_, err = issueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "origin/main"})
+		if err != nil {
+			return err
+		}
+
+		_, err = issueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + strconv.Itoa(localCommits) + " commits by ob"})
+		if err != nil {
+			return err
+		}
+
+		err = PushChanges(vaultPath)
+		if err != nil {
+			return err
+		}
+
+		log.Println("Local commits squashed and pushed.")
+	}
+
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "log", "--oneline", "-" + strconv.Itoa(numCommits)})
+	if err != nil {
+		return err
+	}
+
+	totalCommits := 0
+	for _, line := range lines {
+		if strings.Contains(line, "Squashed") && strings.Contains(line, "commits by ob") {
+			parts := strings.Split(line, " ")
+			for i, part := range parts {
+				if part == "Squashed" && i+1 < len(parts) {
+					count, err := strconv.Atoi(parts[i+1])
+					if err == nil {
+						totalCommits += count
+					}
+					break
+				}
+			}
+		}
+	}
+
+	if totalCommits == 0 {
+		return fmt.Errorf("no squashed commits found in the last %d commits. Ensure you're targeting commits with the format 'Squashed N commits by ob'", numCommits)
+	}
+
+	_, err = issueCommand("git", []string{"-C", vaultPath, "reset", "--soft", "HEAD~" + strconv.Itoa(numCommits)})
+	if err != nil {
+		return err
+	}
+
+	// Ensure numSquashedCommits does not exceed the number of available commits.
+	lines, err = issueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "HEAD"})
+	if err != nil {
+		return err
+	}
+
+	if len(lines) == 0 {
+		return fmt.Errorf("unable to determine commit count")
+	}
+
+	commitCount, err := strconv.Atoi(strings.TrimSpace(lines[0]))
+	if err != nil {
+		return fmt.Errorf("invalid commit count: %w", err)
+	}
+
+	if numCommits > commitCount {
+		return fmt.Errorf("cannot squash %d commits; repository only has %d commits", numCommits, commitCount)
+	}
+
+	_, err = issueCommand("git", []string{"-C", vaultPath, "commit", "-m", "Squashed " + strconv.Itoa(totalCommits) + " commits by ob"})
+	if err != nil {
+		return err
+	}
+
+	_, err = issueCommand("git", []string{"-C", vaultPath, "push", "--force", "origin", "main"})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Squashed %d squash-commits representing %d total commits into one.", numCommits, totalCommits)
+	return nil
+}
