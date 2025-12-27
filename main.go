@@ -222,11 +222,17 @@ func main() {
 			log.Fatal("Error getting last remote commit time:", err)
 		}
 
+		remoteCommits, err := git.GetRemoteCommitCount(vaultPath)
+		if err != nil {
+			log.Fatal("Error getting remote commit count:", err)
+		}
+
 		fmt.Printf("Sync is running: %t\n", isSyncRunning())
 		fmt.Printf("Boot enabled: %t\n", boot.IsBootEnabled())
 		fmt.Printf("Last local commit: %s\n", lastLocalCommit.Local().Format("02/01/2006 15:04"))
 		fmt.Printf("Last remote commit: %s\n", lastRemoteCommit.Local().Format("02/01/2006 15:04"))
 		fmt.Printf("Commits ahead of remote: %d\n", commits)
+		fmt.Printf("Total remote commits: %d\n", remoteCommits)
 		fmt.Printf("Vault: %s\n", vaultPath)
 		fmt.Printf("Logs: %s\n", config.GetLogFile())
 	case "version":

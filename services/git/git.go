@@ -31,6 +31,24 @@ func issueCommand(command string, args []string) ([]string, error) {
 	return lines, nil
 }
 
+func GetRemoteCommitCount(vaultPath string) (int, error) {
+	lines, err := issueCommand("git", []string{"-C", vaultPath, "rev-list", "--count", "origin/main"})
+	if err != nil {
+		return 0, err
+	}
+
+	if len(lines) == 0 {
+		return 0, fmt.Errorf("unable to determine remote commit count")
+	}
+
+	count, err := strconv.Atoi(strings.TrimSpace(lines[0]))
+	if err != nil {
+		return 0, fmt.Errorf("invalid commit count: %w", err)
+	}
+
+	return count, nil
+}
+
 func GetLastCommitTime(vaultPath string, ref string) (time.Time, error) {
 	lines, err := issueCommand("git", []string{"-C", vaultPath, "log", "-1", "--format=%ct", ref})
 	if err != nil {
